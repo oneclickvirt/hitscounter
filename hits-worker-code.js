@@ -427,6 +427,12 @@ function serveBadgeGeneratorPage() {
       </ul>
     </div>
     <div id="error" class="error"></div>
+    <div class="chart-container">
+      <canvas id="exampleChart"></canvas>
+    </div>
+    <div class="chart-container" style="display:none;" id="actualChartContainer">
+      <canvas id="actualChart"></canvas>
+    </div>
   </div>
   <script>
     function updatePreview() {
@@ -460,6 +466,12 @@ function serveBadgeGeneratorPage() {
           body: JSON.stringify({ counter, authCode })
         });
         const data = await response.json();
+        if (!response.ok) {
+          errorDiv.textContent = data.error || '创建失败';
+          errorDiv.style.display = 'block';
+          resultDiv.style.display = 'none';
+          return;
+        }
         // 生成使用方法的URL和代码
         const domain = window.location.host;
         const title = document.getElementById('previewTitle').value;
@@ -472,18 +484,16 @@ function serveBadgeGeneratorPage() {
         document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
         document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
         resultDiv.style.display = 'block';
-        if (!response.ok) {
-          // 显示错误信息的同时保持结果可见
-          errorDiv.textContent = data.error || '创建失败';
-          errorDiv.style.display = 'block';
-        } else {
-          errorDiv.style.display = 'none';
-        }
+        errorDiv.style.display = 'none';
+        // 获取实际数据并渲染图表
+        const actualResponse = await fetch(monthlyApiUrl);
+        const actualData = await actualResponse.json();
+        renderChart('actualChart', actualData.days, actualData.counts);
+        document.getElementById('actualChartContainer').style.display = 'block';
       } catch (e) {
         errorDiv.textContent = '请求失败';
         errorDiv.style.display = 'block';
-        // 保持结果可见
-        resultDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
       }
     }
     function copyCode(elementId) {
@@ -498,6 +508,48 @@ function serveBadgeGeneratorPage() {
         }, 2000);
       });
     }
+    function renderChart(canvasId, labels, data) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '访问量',
+            data: data,
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              display: true,
+              title: {
+                display: true,
+                text: '日期'
+              }
+            },
+            y: {
+              display: true,
+              title: {
+                display: true,
+                text: '访问量'
+              }
+            }
+          }
+        }
+      });
+    }
+    async function fetchExampleData() {
+      const response = await fetch('/api/monthly?counter=example');
+      const data = await response.json();
+      renderChart('exampleChart', data.days, data.counts);
+    }
+    // 初始化示例图表
+    fetchExampleData();
     // 初始化预览
     updatePreview();
   </script>
