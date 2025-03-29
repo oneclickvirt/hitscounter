@@ -250,7 +250,7 @@ function serveBadgeGeneratorPage() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hits! - 访问计数器</title>
+  <title>Hits访问计数器</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -259,6 +259,7 @@ function serveBadgeGeneratorPage() {
       margin: 0 auto;
       padding: 20px;
       background: #f5f5f5;
+      color: #333;
     }
     .container {
       background: white;
@@ -266,20 +267,44 @@ function serveBadgeGeneratorPage() {
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      font-size: 32px;
+      margin-bottom: 30px;
+    }
+    .section-title {
+      color: #2c3e50;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 8px;
+      margin-top: 30px;
+    }
     .form-group {
       margin-bottom: 20px;
     }
     label {
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       font-weight: bold;
+      color: #546e7a;
     }
     input, select {
       width: 100%;
-      padding: 8px;
+      padding: 12px;
       border: 1px solid #ddd;
       border-radius: 4px;
       box-sizing: border-box;
+      font-size: 16px;
+    }
+    input:focus, select:focus {
+      border-color: #2196F3;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+    }
+    small {
+      display: block;
+      color: #757575;
+      margin-top: 5px;
     }
     .color-input {
       display: flex;
@@ -288,25 +313,39 @@ function serveBadgeGeneratorPage() {
     }
     .color-input input[type="color"] {
       width: 50px;
+      height: 40px;
+      padding: 2px;
     }
     .color-input input[type="text"] {
       flex: 1;
     }
     button {
-      background: #4CAF50;
+      background: #2196F3;
       color: white;
-      padding: 10px 20px;
+      padding: 12px 24px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s;
+      width: 100%;
     }
     button:hover {
-      background: #45a049;
+      background: #1976D2;
+    }
+    .copy-btn {
+      background: #607D8B;
+      margin-top: 8px;
+      font-size: 14px;
+      width: auto;
+    }
+    .copy-btn:hover {
+      background: #455A64;
     }
     .result {
-      margin-top: 20px;
-      padding: 15px;
+      margin-top: 30px;
+      padding: 20px;
       background: #f8f9fa;
       border-radius: 4px;
       display: none;
@@ -314,84 +353,132 @@ function serveBadgeGeneratorPage() {
     .preview {
       margin: 20px 0;
       padding: 15px;
-      background: #f8f9fa;
       border-radius: 4px;
       text-align: center;
     }
     .preview-controls {
       margin: 20px 0;
-      padding: 15px;
+      padding: 20px;
       background: #fff;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+    .warning {
+      color: #ff9800;
+      margin-top: 10px;
+      display: none;
+      background-color: #fff3e0;
+      padding: 10px 15px;
       border-radius: 4px;
     }
     .error {
-      color: #dc3545;
+      color: #f44336;
       margin-top: 10px;
       display: none;
+      background-color: #ffebee;
+      padding: 10px 15px;
+      border-radius: 4px;
     }
     code {
       display: block;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ddd;
+      padding: 15px;
+      background: #263238;
+      color: #fff;
       border-radius: 4px;
       margin: 10px 0;
       word-break: break-all;
-    }
-    .copy-btn {
-      background: #6c757d;
-      margin-top: 5px;
-      font-size: 14px;
-    }
-    .copy-btn:hover {
-      background: #5a6268;
+      font-family: monospace;
+      position: relative;
     }
     .preview-badge {
-      margin: 10px 0;
-      display: none; /* 默认隐藏示例徽标 */
+      margin: 20px 0;
+      display: none;
+      background: #fff;
+      padding: 20px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
     }
     .live-badge {
       margin: 10px 0;
-      display: none; /* 默认隐藏实际徽标 */
+      display: none;
     }
     .result-group {
       display: flex;
-      align-items: start;
+      flex-direction: column;
       gap: 20px;
-      margin: 10px 0;
+      margin: 20px 0;
     }
     .code-group {
       flex: 1;
     }
+    .code-group p {
+      font-weight: bold;
+      color: #546e7a;
+    }
     .badge-preview {
       text-align: center;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ddd;
+      padding: 15px;
+      background: #f5f5f5;
       border-radius: 4px;
+      margin-top: 10px;
     }
     footer {
-      margin-top: 20px;
+      margin-top: 30px;
       text-align: center;
       font-size: 14px;
       color: #666;
+      padding: 20px 0;
+      border-top: 1px solid #eee;
     }
     footer a {
-      color: #007BFF;
+      color: #2196F3;
       text-decoration: none;
     }
     footer a:hover {
       text-decoration: underline;
     }
+    .options {
+      margin-top: 30px;
+    }
+    .options-header {
+      font-size: 18px;
+      color: #2196F3;
+      margin-bottom: 15px;
+    }
+    .options-description {
+      color: #757575;
+      margin-bottom: 20px;
+    }
+    .preview-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #546e7a;
+    }
+    .badge-display {
+      margin: 25px 0;
+      text-align: center;
+    }
+    .badge-display img {
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    @media (min-width: 768px) {
+      .result-group {
+        flex-direction: row;
+      }
+      button {
+        width: auto;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>访问计数器生成器</h1>
+    <h1>GENERATE BADGE</h1>
     <!-- 创建计数器部分 -->
     <div class="form-group">
       <label for="counter">计数器名称</label>
-      <input type="text" id="counter" pattern="[a-zA-Z0-9_-]+" required>
+      <input type="text" id="counter" pattern="[a-zA-Z0-9_-]+" placeholder="" required>
       <small>仅允许字母、数字、下划线和连字符，建议使用仓库名称</small>
     </div>
     <div class="form-group">
@@ -400,70 +487,75 @@ function serveBadgeGeneratorPage() {
       <small>创建计数器需要验证码，请联系站长获取</small>
     </div>
     <!-- 自定义样式部分 -->
-    <div class="preview-controls">
-      <h3>自定义样式</h3>
+    <div class="options">
+      <div class="options-header">OPTIONS</div>
+      <div class="options-description">Customize the style of your badge.</div>
       <div class="form-group">
-        <label for="previewTitle">显示文字</label>
-        <input type="text" id="previewTitle" value="Hits" onchange="updatePreview()">
+        <label for="edgeStyle">BORDER</label>
+        <select id="edgeStyle" onchange="updatePreview()">
+          <option value="false">ROUND</option>
+          <option value="true">SQUARE</option>
+        </select>
       </div>
       <div class="form-group">
-        <label for="titleBg">标题背景色</label>
+        <label for="previewTitle">TITLE</label>
+        <input type="text" id="previewTitle" value="hits" onchange="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label for="titleBg">TITLE BG COLOR</label>
         <div class="color-input">
           <input type="color" id="titleBgColor" value="#555555" onchange="updatePreview()">
           <input type="text" id="titleBg" value="#555555" onchange="updatePreview()">
         </div>
       </div>
       <div class="form-group">
-        <label for="countBg">计数背景色</label>
+        <label for="countBg">COUNT BG COLOR</label>
         <div class="color-input">
-          <input type="color" id="countBgColor" value="#79C83D" onchange="updatePreview()">
-          <input type="text" id="countBg" value="#79C83D" onchange="updatePreview()">
+          <input type="color" id="countBgColor" value="#3aebee" onchange="updatePreview()">
+          <input type="text" id="countBg" value="#3aebee" onchange="updatePreview()">
         </div>
       </div>
-      <div class="form-group">
-        <label for="edgeStyle">边角样式</label>
-        <select id="edgeStyle" onchange="updatePreview()">
-          <option value="false">圆角</option>
-          <option value="true">直角</option>
-        </select>
-      </div>
+    </div>
+    <div class="badge-display">
       <div class="preview-badge" id="previewBadge">
         <img src="/example.svg" alt="预览徽标">
       </div>
     </div>
-    <button onclick="createCounter()">创建计数器</button>
+    <button onclick="createCounter()">GENERATE BADGE</button>
     <div id="warning" class="warning"></div>
     <!-- 使用方法部分 -->
     <div id="result" class="result">
-      <h3>使用方法</h3>
-      <div class="result-group">
-        <div class="code-group">
-          <p>HTML 代码：</p>
-          <code id="htmlCode"></code>
-          <button class="copy-btn" onclick="copyCode('htmlCode')">复制代码</button>
-          <div class="badge-preview">
-            <p>HTML 预览效果：</p>
-            <div id="htmlPreview" class="live-badge"></div>
-          </div>
-        </div>
-        <div class="code-group">
-          <p>Markdown 代码：</p>
-          <code id="markdownCode"></code>
-          <button class="copy-btn" onclick="copyCode('markdownCode')">复制代码</button>
-          <div class="badge-preview">
-            <p>Markdown 预览效果：</p>
-            <div id="markdownPreview" class="live-badge"></div>
-          </div>
+      <h3 class="section-title">MARKDOWN</h3>
+      <div class="code-group">
+        <code id="markdownCode"></code>
+        <button class="copy-btn" onclick="copyCode('markdownCode')">COPY</button>
+        <div class="badge-preview">
+          <div id="markdownPreview" class="live-badge"></div>
         </div>
       </div>
-      <p>参数说明：</p>
-      <ul>
-        <li>title: 修改显示文字</li>
-        <li>count_bg: 计数背景色（将#替换为%23）</li>
-        <li>title_bg: 标题背景色（将#替换为%23）</li>
-        <li>edge_flat: 是否使用直角（true/false）</li>
-        <li>action: 设为hit时增加计数，默认仅查看</li>
-      </ul>
+      <h3 class="section-title">HTML LINK</h3>
+      <div class="code-group">
+        <code id="htmlCode"></code>
+        <button class="copy-btn" onclick="copyCode('htmlCode')">COPY</button>
+        <div class="badge-preview">
+          <div id="htmlPreview" class="live-badge"></div>
+        </div>
+      </div>
+      <h3 class="section-title">EMBED URL (NOTION)</h3>
+      <div class="code-group">
+        <code id="embedCode"></code>
+        <button class="copy-btn" onclick="copyCode('embedCode')">COPY</button>
+      </div>
+      <div class="options-description">
+        <p>参数说明：</p>
+        <ul>
+          <li>title: 修改显示文字</li>
+          <li>count_bg: 计数背景色（将#替换为%23）</li>
+          <li>title_bg: 标题背景色（将#替换为%23）</li>
+          <li>edge_flat: 是否使用直角（true/false）</li>
+          <li>action: 设为hit时增加计数，默认仅查看</li>
+        </ul>
+      </div>
     </div>
     <div id="error" class="error"></div>
   </div>
@@ -484,7 +576,7 @@ function serveBadgeGeneratorPage() {
       }
       if (savedData.countBg) {
         document.getElementById('countBg').value = savedData.countBg;
-        document.getElementById('countBg').value = savedData.countBg;
+        document.getElementById('countBgColor').value = savedData.countBg;
       }
       if (savedData.edgeFlat) document.getElementById('edgeStyle').value = savedData.edgeFlat;
       // 如果有已创建的计数器，显示实际徽标
@@ -555,17 +647,19 @@ function serveBadgeGeneratorPage() {
           return;
         }
         const domain = window.location.host;
-        const title = document.getElementById('previewTitle').value || 'Hits';
+        const title = document.getElementById('previewTitle').value || 'hits';
         const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
         const countBg = document.getElementById('countBg').value.replace('#', '%23');
         const edgeFlat = document.getElementById('edgeStyle').value;
         const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
+        const encodedUrl = encodeURIComponent(\`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`);
         // 保存创建的URL
         const savedData = JSON.parse(localStorage.getItem('hitsCounterData') || '{}');
         savedData.createdUrl = url;
         localStorage.setItem('hitsCounterData', JSON.stringify(savedData));
-        document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
         document.getElementById('markdownCode').textContent = \`[![\${title}](\${url})](https://\${domain})\`;
+        document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
+        document.getElementById('embedCode').textContent = url;
         showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
@@ -585,7 +679,7 @@ function serveBadgeGeneratorPage() {
       navigator.clipboard.writeText(text).then(() => {
         const btn = el.nextElementSibling;
         const originalText = btn.textContent;
-        btn.textContent = '已复制！';
+        btn.textContent = 'COPIED!';
         setTimeout(() => {
           btn.textContent = originalText;
         }, 2000);
