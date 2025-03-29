@@ -517,8 +517,8 @@ function serveBadgeGeneratorPage() {
     function showCreatedBadge(url) {
       const domain = window.location.host;
       document.getElementById('previewBadge').style.display = 'none';
-      document.getElementById('htmlPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="访问计数"></a>\`;
-      document.getElementById('markdownPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="访问计数"></a>\`;
+      document.getElementById('htmlPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
+      document.getElementById('markdownPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
       document.getElementById('htmlPreview').style.display = 'block';
       document.getElementById('markdownPreview').style.display = 'block';
     }
@@ -563,8 +563,8 @@ function serveBadgeGeneratorPage() {
         const savedData = JSON.parse(localStorage.getItem('hitsCounterData') || '{}');
         savedData.createdUrl = url;
         localStorage.setItem('hitsCounterData', JSON.stringify(savedData));
-        document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="访问计数"></a>\`;
-        document.getElementById('markdownCode').textContent = \`[![访问计数](\${url})](https://\${domain})\`;
+        document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
+        document.getElementById('markdownCode').textContent = \`[![\${title}](\${url})](https://\${domain})\`;
         showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
