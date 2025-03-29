@@ -516,6 +516,7 @@ function serveBadgeGeneratorPage() {
     }
     function showCreatedBadge(url) {
       const domain = window.location.host;
+      const title = document.getElementById('previewTitle').value || 'Hits';
       document.getElementById('previewBadge').style.display = 'none';
       document.getElementById('htmlPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
       document.getElementById('markdownPreview').innerHTML = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
@@ -554,7 +555,7 @@ function serveBadgeGeneratorPage() {
           return;
         }
         const domain = window.location.host;
-        const title = document.getElementById('previewTitle').value;
+        const title = document.getElementById('previewTitle').value || 'Hits';
         const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
         const countBg = document.getElementById('countBg').value.replace('#', '%23');
         const edgeFlat = document.getElementById('edgeStyle').value;
