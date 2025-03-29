@@ -51,10 +51,10 @@ async function handleRequest(request, db) {
       // 检查计数器是否已存在
       const exists = await checkCounterExists(db, counter)
       if (exists) {
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           warning: '计数器已存在，以下是使用方法',
           exists: true,
-          counter: counter 
+          counter: counter
         }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
@@ -251,7 +251,6 @@ function serveBadgeGeneratorPage() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hits! - 访问计数器</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -325,13 +324,6 @@ function serveBadgeGeneratorPage() {
       background: #fff;
       border-radius: 4px;
     }
-    .chart-container {
-      margin: 20px 0;
-      padding: 15px;
-      background: #fff;
-      border-radius: 4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
     .error {
       color: #dc3545;
       margin-top: 10px;
@@ -363,17 +355,19 @@ function serveBadgeGeneratorPage() {
   <div class="container">
     <h1>访问计数器生成器</h1>
     <div class="form-group">
-      <label for="counter">计数器名称(仅允许字母/数字/下划线/连字符,建议填仓库名称)</label>
+      <label for="counter">计数器名称</label>
       <input type="text" id="counter" pattern="[a-zA-Z0-9_-]+" required>
+      <small>仅允许字母、数字、下划线和连字符，建议使用仓库名称</small>
     </div>
     <div class="form-group">
-      <label for="authCode">验证码(没有站长的验证码无法创建计数器)</label>
+      <label for="authCode">验证码</label>
       <input type="password" id="authCode" required>
+      <small>创建计数器需要验证码，请联系站长获取</small>
     </div>
     <div class="preview-controls">
-      <h3>自定义预览</h3>
+      <h3>自定义样式</h3>
       <div class="form-group">
-        <label for="previewTitle">标题文字</label>
+        <label for="previewTitle">显示文字</label>
         <input type="text" id="previewTitle" value="Hits" onchange="updatePreview()">
       </div>
       <div class="form-group">
@@ -407,37 +401,20 @@ function serveBadgeGeneratorPage() {
       <h3>使用方法</h3>
       <p>HTML 代码：</p>
       <code id="htmlCode"></code>
-      <button class="copy-btn" onclick="copyCode('htmlCode')">复制 HTML</button>
+      <button class="copy-btn" onclick="copyCode('htmlCode')">复制代码</button>
       <p>Markdown 代码：</p>
       <code id="markdownCode"></code>
-      <button class="copy-btn" onclick="copyCode('markdownCode')">复制 Markdown</button>
-      <h4>月度统计图</h4>
-      <p>获取最近30天的访问统计数据：</p>
-      <code id="monthlyApiCode"></code>
-      <button class="copy-btn" onclick="copyCode('monthlyApiCode')">复制 API URL</button>
-      <p>API 返回格式：</p>
-      <pre>
-{
-  "days": ["2024-01-01", "2024-01-02", ...],
-  "counts": [10, 15, ...]
-}
-      </pre>
-      <p>你可以使用这些数据配合任何图表库（如 Chart.js、ECharts 等）来绘制访问量趋势图。</p>
-      <p>自定义参数说明：</p>
+      <button class="copy-btn" onclick="copyCode('markdownCode')">复制代码</button>
+      <p>参数说明：</p>
       <ul>
         <li>title: 修改显示文字</li>
-        <li>count_bg: 计数背景色（十六进制颜色码，需要将#替换为%23）</li>
-        <li>title_bg: 标题背景色（十六进制颜色码，需要将#替换为%23）</li>
+        <li>count_bg: 计数背景色（将#替换为%23）</li>
+        <li>title_bg: 标题背景色（将#替换为%23）</li>
         <li>edge_flat: 是否使用直角（true/false）</li>
+        <li>action: 设为hit时增加计数，默认仅查看</li>
       </ul>
     </div>
     <div id="error" class="error"></div>
-    <div class="chart-container">
-      <canvas id="exampleChart"></canvas>
-    </div>
-    <div class="chart-container" style="display:none;" id="actualChartContainer">
-      <canvas id="actualChart"></canvas>
-    </div>
   </div>
   <script>
     function updatePreview() {
@@ -448,21 +425,24 @@ function serveBadgeGeneratorPage() {
       const previewUrl = \`/example.svg?title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
       document.getElementById('previewBadge').innerHTML = \`<img src="\${previewUrl}" alt="预览徽标">\`;
     }
-    // 颜色输入框同步
+
     document.getElementById('titleBgColor').addEventListener('input', function(e) {
       document.getElementById('titleBg').value = e.target.value;
       updatePreview();
     });
+
     document.getElementById('countBgColor').addEventListener('input', function(e) {
       document.getElementById('countBg').value = e.target.value;
       updatePreview();
     });
+
     async function createCounter() {
       const counter = document.getElementById('counter').value;
       const authCode = document.getElementById('authCode').value;
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
       const warningDiv = document.getElementById('warning');
+
       try {
         const response = await fetch('/api/create', {
           method: 'POST',
@@ -471,36 +451,33 @@ function serveBadgeGeneratorPage() {
           },
           body: JSON.stringify({ counter, authCode })
         });
+
         const data = await response.json();
         errorDiv.style.display = 'none';
         warningDiv.style.display = 'none';
         resultDiv.style.display = 'none';
+
         if (!response.ok) {
           errorDiv.textContent = data.error || '创建失败';
           errorDiv.style.display = 'block';
           return;
         }
-        // 生成使用方法的URL和代码
+
         const domain = window.location.host;
         const title = document.getElementById('previewTitle').value;
         const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
         const countBg = document.getElementById('countBg').value.replace('#', '%23');
         const edgeFlat = document.getElementById('edgeStyle').value;
         const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
-        const monthlyApiUrl = \`https://\${domain}/api/monthly?counter=\${counter}\`;
+
         document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
         document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
-        document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
+
         if (data.exists) {
           warningDiv.textContent = data.warning;
           warningDiv.style.display = 'block';
         }
         resultDiv.style.display = 'block';
-        // 获取实际数据并渲染图表
-        const actualResponse = await fetch(monthlyApiUrl);
-        const actualData = await actualResponse.json();
-        renderChart('actualChart', actualData.days, actualData.counts);
-        document.getElementById('actualChartContainer').style.display = 'block';
       } catch (e) {
         errorDiv.textContent = '请求失败';
         errorDiv.style.display = 'block';
@@ -508,6 +485,7 @@ function serveBadgeGeneratorPage() {
         warningDiv.style.display = 'none';
       }
     }
+
     function copyCode(elementId) {
       const el = document.getElementById(elementId);
       const text = el.textContent;
@@ -520,49 +498,7 @@ function serveBadgeGeneratorPage() {
         }, 2000);
       });
     }
-    function renderChart(canvasId, labels, data) {
-      const ctx = document.getElementById(canvasId).getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: '访问量',
-            data: data,
-            borderColor: '#4CAF50',
-            backgroundColor: 'rgba(76, 175, 80, 0.2)',
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              display: true,
-              title: {
-                display: true,
-                text: '日期'
-              }
-            },
-            y: {
-              display: true,
-              title: {
-                display: true,
-                text: '访问量'
-              }
-            }
-          }
-        }
-      });
-    }
-    async function fetchExampleData() {
-      const response = await fetch('/api/monthly?counter=example');
-      const data = await response.json();
-      renderChart('exampleChart', data.days, data.counts);
-    }
-    // 初始化示例图表
-    fetchExampleData();
-    // 初始化预览
+
     updatePreview();
   </script>
 </body>
