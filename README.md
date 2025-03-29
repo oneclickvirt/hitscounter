@@ -1,5 +1,7 @@
 # hitscounter
 
+![访问计数](https://hits.spiritlhl.net/hitscounter.svg?action=hit&title=Hits&title_bg=%23555555&count_bg=%233aebee&edge_flat=false)
+
 一个基于 Cloudflare Workers 和 D1 数据库的轻量级访问计数器。
 
 ## 部署步骤
