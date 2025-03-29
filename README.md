@@ -40,6 +40,9 @@ https://blog.cloudflare.com/zh-cn/making-full-stack-easier-d1-ga-hyperdrive-queu
 
 ## 部署图示
 
+<details>
+<summary>展开查看详细说明</summary>
+
 ![1743226928598](https://github.com/user-attachments/assets/b0dab5e6-741e-4b25-ad0a-94968a883925)
 
 ![1743227024678](https://github.com/user-attachments/assets/1b330664-c21f-4482-95be-895033911dfc)
@@ -65,3 +68,9 @@ https://blog.cloudflare.com/zh-cn/making-full-stack-easier-d1-ga-hyperdrive-queu
 ![图片](https://github.com/user-attachments/assets/ee7d8cc1-137f-427b-881c-564113cc8c11)
 
 ![图片](https://github.com/user-attachments/assets/0490e4c5-e4b6-470a-8bfd-77672db71745)
+
+</details>
+
+## Thanks
+
+感谢 hits.seeyoufarm.com 曾经提供的计数服务，https://github.com/gjbae1212/hit-counter 已被归档，本项目受此启发诞生。
