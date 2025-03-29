@@ -20,13 +20,23 @@ CREATE TABLE counters ( name TEXT PRIMARY KEY, count INTEGER DEFAULT 0 );
    在Worker代码中找到 ```AUTH_CODE``` 常量，将 ```your_auth_code_here``` 修改为你想要的验证码。这个验证码将用于创建新的计数器。
 
 4. 配置域名和绑定
-   - 修改 ```ALLOWED_DOMAIN``` 为你的计数器域名
+   - 在Worker代码中找到并修改 ```ALLOWED_DOMAIN``` 为你的计数器域名，不要带协议名
    - 在Worker的 ```Settings > Bindings > Add > D1 Database``` 中：
      - 变量名称输入： ```HITS```
      - 数据库选择： ```hits```
    - 在Worker的 ```Domains & Routes``` - ```Add``` - ```Custom domain``` 中添加你的计数器域名
 
 部署完成后，访问你配置的域名即可看到计数器生成器页面，按照页面提示创建和使用计数器。
+
+**注意不要泄露你部署的时候设置的验证码，无验证码不可创建新的计数器SVG**
+
+## 免费套餐额度
+
+https://blog.cloudflare.com/zh-cn/making-full-stack-easier-d1-ga-hyperdrive-queues/
+
+![图片](https://github.com/user-attachments/assets/27586cd9-8943-4911-8770-4e74e208c63c)
+
+基本够个人用了
 
 ## 部署图示
 
