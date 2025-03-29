@@ -348,12 +348,34 @@ function serveBadgeGeneratorPage() {
     }
     .preview-badge {
       margin: 10px 0;
+      display: none; /* 默认隐藏示例徽标 */
+    }
+    .live-badge {
+      margin: 10px 0;
+      display: none; /* 默认隐藏实际徽标 */
+    }
+    .result-group {
+      display: flex;
+      align-items: start;
+      gap: 20px;
+      margin: 10px 0;
+    }
+    .code-group {
+      flex: 1;
+    }
+    .badge-preview {
+      text-align: center;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>访问计数器生成器</h1>
+    <!-- 创建计数器部分 -->
     <div class="form-group">
       <label for="counter">计数器名称</label>
       <input type="text" id="counter" pattern="[a-zA-Z0-9_-]+" required>
@@ -364,6 +386,7 @@ function serveBadgeGeneratorPage() {
       <input type="password" id="authCode" required>
       <small>创建计数器需要验证码，请联系站长获取</small>
     </div>
+    <!-- 自定义样式部分 -->
     <div class="preview-controls">
       <h3>自定义样式</h3>
       <div class="form-group">
@@ -397,14 +420,29 @@ function serveBadgeGeneratorPage() {
     </div>
     <button onclick="createCounter()">创建计数器</button>
     <div id="warning" class="warning"></div>
+    <!-- 使用方法部分 -->
     <div id="result" class="result">
       <h3>使用方法</h3>
-      <p>HTML 代码：</p>
-      <code id="htmlCode"></code>
-      <button class="copy-btn" onclick="copyCode('htmlCode')">复制代码</button>
-      <p>Markdown 代码：</p>
-      <code id="markdownCode"></code>
-      <button class="copy-btn" onclick="copyCode('markdownCode')">复制代码</button>
+      <div class="result-group">
+        <div class="code-group">
+          <p>HTML 代码：</p>
+          <code id="htmlCode"></code>
+          <button class="copy-btn" onclick="copyCode('htmlCode')">复制代码</button>
+          <div class="badge-preview">
+            <p>HTML 预览效果：</p>
+            <div id="htmlPreview" class="live-badge"></div>
+          </div>
+        </div>
+        <div class="code-group">
+          <p>Markdown 代码：</p>
+          <code id="markdownCode"></code>
+          <button class="copy-btn" onclick="copyCode('markdownCode')">复制代码</button>
+          <div class="badge-preview">
+            <p>Markdown 预览效果：</p>
+            <div id="markdownPreview" class="live-badge"></div>
+          </div>
+        </div>
+      </div>
       <p>参数说明：</p>
       <ul>
         <li>title: 修改显示文字</li>
@@ -417,6 +455,40 @@ function serveBadgeGeneratorPage() {
     <div id="error" class="error"></div>
   </div>
   <script>
+    // 页面加载时恢复保存的数据
+    window.addEventListener('load', function() {
+      const savedData = JSON.parse(localStorage.getItem('hitsCounterData') || '{}');
+      // 恢复表单数据
+      if (savedData.counter) document.getElementById('counter').value = savedData.counter;
+      if (savedData.authCode) document.getElementById('authCode').value = savedData.authCode;
+      if (savedData.title) document.getElementById('previewTitle').value = savedData.title;
+      if (savedData.titleBg) {
+        document.getElementById('titleBg').value = savedData.titleBg;
+        document.getElementById('titleBgColor').value = savedData.titleBg;
+      }
+      if (savedData.countBg) {
+        document.getElementById('countBg').value = savedData.countBg;
+        document.getElementById('countBg').value = savedData.countBg;
+      }
+      if (savedData.edgeFlat) document.getElementById('edgeStyle').value = savedData.edgeFlat;
+      // 如果有已创建的计数器，显示实际徽标
+      if (savedData.createdUrl) {
+        showCreatedBadge(savedData.createdUrl);
+      } else {
+        document.getElementById('previewBadge').style.display = 'block';
+      }
+    });
+    function saveFormData() {
+      const data = {
+        counter: document.getElementById('counter').value,
+        authCode: document.getElementById('authCode').value,
+        title: document.getElementById('previewTitle').value,
+        titleBg: document.getElementById('titleBg').value,
+        countBg: document.getElementById('countBg').value,
+        edgeFlat: document.getElementById('edgeStyle').value
+      };
+      localStorage.setItem('hitsCounterData', JSON.stringify(data));
+    }
     function updatePreview() {
       const title = document.getElementById('previewTitle').value;
       const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
@@ -424,25 +496,29 @@ function serveBadgeGeneratorPage() {
       const edgeFlat = document.getElementById('edgeStyle').value;
       const previewUrl = \`/example.svg?title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
       document.getElementById('previewBadge').innerHTML = \`<img src="\${previewUrl}" alt="预览徽标">\`;
+      saveFormData();
     }
-
+    function showCreatedBadge(url) {
+      document.getElementById('previewBadge').style.display = 'none';
+      document.getElementById('htmlPreview').innerHTML = \`<img src="\${url}" alt="访问计数">\`;
+      document.getElementById('markdownPreview').innerHTML = \`<img src="\${url}" alt="访问计数">\`;
+      document.getElementById('htmlPreview').style.display = 'block';
+      document.getElementById('markdownPreview').style.display = 'block';
+    }
     document.getElementById('titleBgColor').addEventListener('input', function(e) {
       document.getElementById('titleBg').value = e.target.value;
       updatePreview();
     });
-
     document.getElementById('countBgColor').addEventListener('input', function(e) {
       document.getElementById('countBg').value = e.target.value;
       updatePreview();
     });
-
     async function createCounter() {
       const counter = document.getElementById('counter').value;
       const authCode = document.getElementById('authCode').value;
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
       const warningDiv = document.getElementById('warning');
-
       try {
         const response = await fetch('/api/create', {
           method: 'POST',
@@ -451,28 +527,28 @@ function serveBadgeGeneratorPage() {
           },
           body: JSON.stringify({ counter, authCode })
         });
-
         const data = await response.json();
         errorDiv.style.display = 'none';
         warningDiv.style.display = 'none';
         resultDiv.style.display = 'none';
-
         if (!response.ok) {
           errorDiv.textContent = data.error || '创建失败';
           errorDiv.style.display = 'block';
           return;
         }
-
         const domain = window.location.host;
         const title = document.getElementById('previewTitle').value;
         const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
         const countBg = document.getElementById('countBg').value.replace('#', '%23');
         const edgeFlat = document.getElementById('edgeStyle').value;
         const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
-
+        // 保存创建的URL
+        const savedData = JSON.parse(localStorage.getItem('hitsCounterData') || '{}');
+        savedData.createdUrl = url;
+        localStorage.setItem('hitsCounterData', JSON.stringify(savedData));
         document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
         document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
-
+        showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
           warningDiv.style.display = 'block';
@@ -485,7 +561,6 @@ function serveBadgeGeneratorPage() {
         warningDiv.style.display = 'none';
       }
     }
-
     function copyCode(elementId) {
       const el = document.getElementById(elementId);
       const text = el.textContent;
@@ -498,7 +573,6 @@ function serveBadgeGeneratorPage() {
         }, 2000);
       });
     }
-
     updatePreview();
   </script>
 </body>
