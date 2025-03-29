@@ -68,6 +68,42 @@ async function handleRequest(request, db) {
       })
     }
   }
+  // 添加获取月度统计的API
+  if (url.pathname === '/api/monthly') {
+    const counterName = url.searchParams.get('counter')
+    if (!counterName) {
+      return new Response(JSON.stringify({ error: '缺少计数器名称' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    // 验证计数器是否存在
+    const exists = await checkCounterExists(db, counterName)
+    if (!exists) {
+      return new Response(JSON.stringify({ error: '计数器不存在' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+    // 获取最近30天的数据
+    const days = []
+    const counts = []
+    for (let i = 0; i < 30; i++) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dayStr = date.toISOString().split('T')[0]
+      const dailyKey = `${counterName}:daily:${dayStr}`
+      const count = await getCounter(db, dailyKey)
+      days.unshift(dayStr)
+      counts.unshift(count)
+    }
+    return new Response(JSON.stringify({ days, counts }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    })
+  }
   // 处理正常的计数器请求
   if (url.hostname !== ALLOWED_DOMAIN) {
     return new Response('Not Found', { status: 404 })
@@ -344,6 +380,18 @@ function serveBadgeGeneratorPage() {
       <p>Markdown 代码：</p>
       <code id="markdownCode"></code>
       <button class="copy-btn" onclick="copyCode('markdownCode')">复制 Markdown</button>
+      <h4>月度统计图</h4>
+      <p>获取最近30天的访问统计数据：</p>
+      <code id="monthlyApiCode"></code>
+      <button class="copy-btn" onclick="copyCode('monthlyApiCode')">复制 API URL</button>
+      <p>API 返回格式：</p>
+      <pre>
+{
+  "days": ["2024-01-01", "2024-01-02", ...],
+  "counts": [10, 15, ...]
+}
+      </pre>
+      <p>你可以使用这些数据配合任何图表库（如 Chart.js、ECharts 等）来绘制访问量趋势图。</p>
       <p>自定义参数说明：</p>
       <ul>
         <li>title: 修改显示文字</li>
@@ -393,8 +441,10 @@ function serveBadgeGeneratorPage() {
           const countBg = document.getElementById('countBg').value.replace('#', '%23');
           const edgeFlat = document.getElementById('edgeStyle').value;
           const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
+          const monthlyApiUrl = \`https://\${domain}/api/monthly?counter=\${counter}\`;
           document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
           document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
+          document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
           resultDiv.style.display = 'block';
           errorDiv.style.display = 'none';
         } else {
