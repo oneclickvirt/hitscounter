@@ -4,7 +4,9 @@ export default {
   }
 }
 
-const ALLOWED_DOMAIN = 'your.domain.com'
+// const ALLOWED_DOMAIN = 'your.domain.com'
+// const ALLOWED_PATHS = ['keyword1', 'keyword2', 'keyword3']
+const ALLOWED_DOMAIN = 'hits.spiritlhl.net'
 const ALLOWED_PATHS = ['keyword1', 'keyword2', 'keyword3']
 
 async function handleRequest(request, db) {
