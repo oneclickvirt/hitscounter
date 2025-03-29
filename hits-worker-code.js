@@ -370,6 +370,19 @@ function serveBadgeGeneratorPage() {
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+    footer a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -454,6 +467,9 @@ function serveBadgeGeneratorPage() {
     </div>
     <div id="error" class="error"></div>
   </div>
+  <footer>
+    本项目开源于 <a href="https://github.com/oneclickvirt/hitscounter" target="_blank">github.com/oneclickvirt/hitscounter</a>
+  </footer>
   <script>
     // 页面加载时恢复保存的数据
     window.addEventListener('load', function() {
