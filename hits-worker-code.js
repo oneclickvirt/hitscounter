@@ -51,8 +51,12 @@ async function handleRequest(request, db) {
       // 检查计数器是否已存在
       const exists = await checkCounterExists(db, counter)
       if (exists) {
-        return new Response(JSON.stringify({ error: '计数器已存在' }), {
-          status: 400,
+        return new Response(JSON.stringify({ 
+          warning: '计数器已存在，以下是使用方法',
+          exists: true,
+          counter: counter 
+        }), {
+          status: 200,
           headers: { 'Content-Type': 'application/json' }
         })
       }
@@ -398,6 +402,7 @@ function serveBadgeGeneratorPage() {
       </div>
     </div>
     <button onclick="createCounter()">创建计数器</button>
+    <div id="warning" class="warning"></div>
     <div id="result" class="result">
       <h3>使用方法</h3>
       <p>HTML 代码：</p>
@@ -457,6 +462,7 @@ function serveBadgeGeneratorPage() {
       const authCode = document.getElementById('authCode').value;
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
+      const warningDiv = document.getElementById('warning');
       try {
         const response = await fetch('/api/create', {
           method: 'POST',
@@ -466,10 +472,12 @@ function serveBadgeGeneratorPage() {
           body: JSON.stringify({ counter, authCode })
         });
         const data = await response.json();
+        errorDiv.style.display = 'none';
+        warningDiv.style.display = 'none';
+        resultDiv.style.display = 'none';
         if (!response.ok) {
           errorDiv.textContent = data.error || '创建失败';
           errorDiv.style.display = 'block';
-          resultDiv.style.display = 'none';
           return;
         }
         // 生成使用方法的URL和代码
@@ -483,8 +491,11 @@ function serveBadgeGeneratorPage() {
         document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
         document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
         document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
+        if (data.exists) {
+          warningDiv.textContent = data.warning;
+          warningDiv.style.display = 'block';
+        }
         resultDiv.style.display = 'block';
-        errorDiv.style.display = 'none';
         // 获取实际数据并渲染图表
         const actualResponse = await fetch(monthlyApiUrl);
         const actualData = await actualResponse.json();
@@ -494,6 +505,7 @@ function serveBadgeGeneratorPage() {
         errorDiv.textContent = '请求失败';
         errorDiv.style.display = 'block';
         resultDiv.style.display = 'none';
+        warningDiv.style.display = 'none';
       }
     }
     function copyCode(elementId) {
