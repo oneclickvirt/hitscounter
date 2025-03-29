@@ -71,6 +71,24 @@ async function handleRequest(request, db) {
   // 添加获取月度统计的API
   if (url.pathname === '/api/monthly') {
     const counterName = url.searchParams.get('counter')
+    if (counterName === 'example') {
+      // 生成示例数据
+      const days = []
+      const counts = []
+      const today = new Date()
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(today)
+        date.setDate(date.getDate() - i)
+        days.push(date.toISOString().split('T')[0])
+        counts.push(Math.floor(Math.random() * 50) + 10) // 生成10-60之间的随机数
+      }
+      return new Response(JSON.stringify({ days, counts }), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      })
+    }
     if (!counterName) {
       return new Response(JSON.stringify({ error: '缺少计数器名称' }), {
         status: 400,
@@ -214,10 +232,10 @@ function generateSvg({ title, titleBg, countBg, edgeFlat, dailyCount, totalCount
     <rect width="${width}" height="20" fill="url(#smooth)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="11">
-    <text x="${titleWidth/2}" y="15" fill="#010101" fill-opacity=".3">${title}</text>
-    <text x="${titleWidth/2}" y="14" fill="#fff">${title}</text>
-    <text x="${titleWidth + countWidth/2}" y="15" fill="#010101" fill-opacity=".3">${countText}</text>
-    <text x="${titleWidth + countWidth/2}" y="14" fill="#fff">${countText}</text>
+    <text x="${titleWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${title}</text>
+    <text x="${titleWidth / 2}" y="14" fill="#fff">${title}</text>
+    <text x="${titleWidth + countWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${countText}</text>
+    <text x="${titleWidth + countWidth / 2}" y="14" fill="#fff">${countText}</text>
   </g>
 </svg>`.trim()
 }
@@ -229,6 +247,7 @@ function serveBadgeGeneratorPage() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hits! - 访问计数器</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -301,6 +320,13 @@ function serveBadgeGeneratorPage() {
       padding: 15px;
       background: #fff;
       border-radius: 4px;
+    }
+    .chart-container {
+      margin: 20px 0;
+      padding: 15px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .error {
       color: #dc3545;
@@ -434,28 +460,30 @@ function serveBadgeGeneratorPage() {
           body: JSON.stringify({ counter, authCode })
         });
         const data = await response.json();
-        if (response.ok) {
-          const domain = window.location.host;
-          const title = document.getElementById('previewTitle').value;
-          const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
-          const countBg = document.getElementById('countBg').value.replace('#', '%23');
-          const edgeFlat = document.getElementById('edgeStyle').value;
-          const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
-          const monthlyApiUrl = \`https://\${domain}/api/monthly?counter=\${counter}\`;
-          document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
-          document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
-          document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
-          resultDiv.style.display = 'block';
-          errorDiv.style.display = 'none';
-        } else {
+        // 生成使用方法的URL和代码
+        const domain = window.location.host;
+        const title = document.getElementById('previewTitle').value;
+        const titleBg = document.getElementById('titleBg').value.replace('#', '%23');
+        const countBg = document.getElementById('countBg').value.replace('#', '%23');
+        const edgeFlat = document.getElementById('edgeStyle').value;
+        const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
+        const monthlyApiUrl = \`https://\${domain}/api/monthly?counter=\${counter}\`;
+        document.getElementById('htmlCode').textContent = \`<img src="\${url}" alt="访问计数">\`;
+        document.getElementById('markdownCode').textContent = \`![访问计数](\${url})\`;
+        document.getElementById('monthlyApiCode').textContent = monthlyApiUrl;
+        resultDiv.style.display = 'block';
+        if (!response.ok) {
+          // 显示错误信息的同时保持结果可见
           errorDiv.textContent = data.error || '创建失败';
           errorDiv.style.display = 'block';
-          resultDiv.style.display = 'none';
+        } else {
+          errorDiv.style.display = 'none';
         }
       } catch (e) {
         errorDiv.textContent = '请求失败';
         errorDiv.style.display = 'block';
-        resultDiv.style.display = 'none';
+        // 保持结果可见
+        resultDiv.style.display = 'block';
       }
     }
     function copyCode(elementId) {
