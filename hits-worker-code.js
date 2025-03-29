@@ -488,8 +488,6 @@ function serveBadgeGeneratorPage() {
     </div>
     <!-- 自定义样式部分 -->
     <div class="options">
-      <div class="options-header">OPTIONS</div>
-      <div class="options-description">Customize the style of your badge.</div>
       <div class="form-group">
         <label for="edgeStyle">BORDER</label>
         <select id="edgeStyle" onchange="updatePreview()">
