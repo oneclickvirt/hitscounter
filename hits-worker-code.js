@@ -4,40 +4,34 @@ export default {
   }
 }
 
-const ALLOWED_DOMAIN = 'hits.spiritlhl.net'
-const AUTH_CODE = 'your_auth_code_here' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.example.com' // 设置你的域名
+const AUTH_CODE = 'your_auth_code' // 设置你的验证码
 
 async function handleRequest(request, db) {
   const url = new URL(request.url)
-  
   // 如果是主页请求，返回徽标生成页面
   if (url.pathname === '/' || url.pathname === '') {
     return serveBadgeGeneratorPage()
   }
-
   // 处理API请求
   if (url.pathname === '/api/create') {
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
     }
-    
     try {
       const { counter, authCode } = await request.json()
-      
       if (authCode !== AUTH_CODE) {
         return new Response(JSON.stringify({ error: '验证码错误' }), {
           status: 403,
           headers: { 'Content-Type': 'application/json' }
         })
       }
-      
       if (!counter || !/^[a-zA-Z0-9_-]+$/.test(counter)) {
         return new Response(JSON.stringify({ error: '计数器名称无效' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' }
         })
       }
-      
       // 检查计数器是否已存在
       const exists = await checkCounterExists(db, counter)
       if (exists) {
@@ -46,10 +40,8 @@ async function handleRequest(request, db) {
           headers: { 'Content-Type': 'application/json' }
         })
       }
-      
       // 创建新计数器
       await createCounter(db, counter)
-      
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' }
       })
@@ -60,33 +52,26 @@ async function handleRequest(request, db) {
       })
     }
   }
-  
   if (url.hostname !== ALLOWED_DOMAIN) {
     return new Response('Not Found', { status: 404 })
   }
-  
   const pathParts = url.pathname.split('/').filter(Boolean)
   const counterName = pathParts[0]?.replace('.svg', '')
-  
   if (!counterName) {
     return new Response('Not Found', { status: 404 })
   }
-  
   // 验证计数器是否存在
   const exists = await checkCounterExists(db, counterName)
   if (!exists) {
     return new Response('Counter not found', { status: 404 })
   }
-  
   const action = url.searchParams.get('action') || 'view'
   const isSvg = url.pathname.endsWith('.svg')
   const today = new Date().toISOString().split('T')[0]
   const totalKey = `${counterName}:total`
   const dailyKey = `${counterName}:daily:${today}`
-  
   let total = await getCounter(db, totalKey)
   let daily = await getCounter(db, dailyKey)
-  
   if (action.toLowerCase() === 'hit') {
     total++
     daily++
@@ -99,7 +84,6 @@ async function handleRequest(request, db) {
     const titleBg = url.searchParams.get('title_bg') || '#555555'
     const title = url.searchParams.get('title') || 'Hits'
     const edgeFlat = url.searchParams.get('edge_flat') === 'true'
-    
     const svg = generateSvg({
       title,
       titleBg,
@@ -118,7 +102,6 @@ async function handleRequest(request, db) {
       }
     })
   }
-  
   const responseData = {
     counter: counterName,
     action: action,
@@ -127,7 +110,6 @@ async function handleRequest(request, db) {
     date: today,
     timestamp: new Date().toISOString()
   }
-  
   return new Response(JSON.stringify(responseData, null, 2), {
     headers: {
       'Content-Type': 'application/json',
@@ -168,11 +150,9 @@ async function updateCounter(db, key, value) {
 function generateSvg({ title, titleBg, countBg, edgeFlat, dailyCount, totalCount }) {
   const borderRadius = edgeFlat ? '0' : '3'
   const countText = `${dailyCount} / ${totalCount}`
-  
   const titleWidth = title.length * 7 + 10
   const countWidth = countText.length * 7 + 10
   const width = titleWidth + countWidth
-  
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20">
   <linearGradient id="smooth" x2="0" y2="100%">
@@ -287,17 +267,14 @@ function serveBadgeGeneratorPage() {
 <body>
   <div class="container">
     <h1>访问计数器生成器</h1>
-    
     <div class="form-group">
-      <label for="counter">计数器名称 (仅允许字母、数字、下划线和连字符)</label>
+      <label for="counter">计数器名称(仅允许字母/数字/下划线,建议填仓库名称)</label>
       <input type="text" id="counter" pattern="[a-zA-Z0-9_-]+" required>
     </div>
-    
     <div class="form-group">
       <label for="authCode">验证码</label>
       <input type="password" id="authCode" required>
     </div>
-
     <div class="preview">
       <h3>预览效果</h3>
       <p>默认样式：</p>
@@ -305,19 +282,15 @@ function serveBadgeGeneratorPage() {
       <p>带参数样式：</p>
       <img src="/example.svg?title=访问量&count_bg=%2379C83D&title_bg=%23555555" alt="示例徽标">
     </div>
-    
     <button onclick="createCounter()">创建计数器</button>
-    
     <div id="result" class="result">
       <h3>使用方法</h3>
       <p>HTML 代码：</p>
       <code id="htmlCode"></code>
       <button class="copy-btn" onclick="copyCode('htmlCode')">复制 HTML</button>
-      
       <p>Markdown 代码：</p>
       <code id="markdownCode"></code>
       <button class="copy-btn" onclick="copyCode('markdownCode')">复制 Markdown</button>
-
       <p>自定义参数说明：</p>
       <ul>
         <li>title: 修改显示文字</li>
@@ -326,17 +299,14 @@ function serveBadgeGeneratorPage() {
         <li>edge_flat: 是否使用直角（true/false）</li>
       </ul>
     </div>
-    
     <div id="error" class="error"></div>
   </div>
-
   <script>
     async function createCounter() {
       const counter = document.getElementById('counter').value;
       const authCode = document.getElementById('authCode').value;
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
-      
       try {
         const response = await fetch('/api/create', {
           method: 'POST',
@@ -345,18 +315,14 @@ function serveBadgeGeneratorPage() {
           },
           body: JSON.stringify({ counter, authCode })
         });
-        
         const data = await response.json();
-        
         if (response.ok) {
           const domain = window.location.host;
           const url = \`https://\${domain}/\${counter}.svg?action=hit\`;
-          
           document.getElementById('htmlCode').textContent = 
             \`<img src="\${url}" alt="访问计数">\`;
           document.getElementById('markdownCode').textContent = 
             \`![访问计数](\${url})\`;
-          
           resultDiv.style.display = 'block';
           errorDiv.style.display = 'none';
         } else {
@@ -370,11 +336,9 @@ function serveBadgeGeneratorPage() {
         resultDiv.style.display = 'none';
       }
     }
-
     function copyCode(elementId) {
       const el = document.getElementById(elementId);
       const text = el.textContent;
-      
       navigator.clipboard.writeText(text).then(() => {
         const btn = el.nextElementSibling;
         const originalText = btn.textContent;
@@ -388,7 +352,6 @@ function serveBadgeGeneratorPage() {
 </body>
 </html>
   `.trim();
-  
   return new Response(html, {
     headers: { 'Content-Type': 'text/html;charset=UTF-8' }
   });
