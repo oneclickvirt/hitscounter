@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = 'hits.xxxxxxxx.net' // 设置你的域名
-const AUTH_CODE = 'xxxxx' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.xxxx.net' // 设置你的域名
+const AUTH_CODE = 'xxxxxx' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
@@ -29,9 +29,9 @@ async function handleRequest(request, db) {
       }
     })
   }
-  // 处理图表页面请求
-  if (url.pathname.startsWith('/chart/')) {
-    const counterName = url.pathname.split('/')[2]
+  // 处理SVG图表请求
+  if (url.pathname.startsWith('/chart/') && url.pathname.endsWith('.svg')) {
+    const counterName = url.pathname.split('/')[2].replace('.svg', '')
     if (!counterName) {
       return new Response('Not Found', { status: 404 })
     }
@@ -39,6 +39,7 @@ async function handleRequest(request, db) {
     if (!exists) {
       return new Response('Counter not found', { status: 404 })
     }
+
     const days = []
     const counts = []
     for (let i = 29; i >= 0; i--) {
@@ -50,7 +51,13 @@ async function handleRequest(request, db) {
       days.push(dayStr)
       counts.push(count)
     }
-    return serveChartPage(counterName, days, counts)
+    const svg = generateChartSvg(counterName, days, counts)
+    return new Response(svg, {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'max-age=300', // 缓存5分钟
+      }
+    })
   }
   // 处理API请求
   if (url.pathname === '/api/create') {
@@ -245,76 +252,103 @@ async function cleanupOldDailyData(db, counterName) {
     'DELETE FROM counters WHERE name LIKE ? AND name < ?'
   ).bind(`${counterName}:daily:%`, `${counterName}:daily:${cutoffDate}`).run();
 }
-function serveChartPage(counterName, days, counts) {
-  const chartData = days.map((day, index) => `{date: '${day}', count: ${counts[index]}}`).join(',');
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>${counterName} - 使用统计图表</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-    h1 { text-align: center; color: #333; }
-    .chart-container { position: relative; height: 400px; margin: 30px 0; }
-    .stats { display: flex; justify-content: space-around; margin: 20px 0; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 24px; font-weight: bold; color: #2196F3; }
-    .stat-label { color: #666; margin-top: 5px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>${counterName} 访问统计</h1>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">${counts.reduce((a, b) => a + b, 0)}</div>
-        <div class="stat-label">30天总访问</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">${Math.max(...counts)}</div>
-        <div class="stat-label">单日最高</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value">${Math.round(counts.reduce((a, b) => a + b, 0) / counts.length)}</div>
-        <div class="stat-label">日平均访问</div>
-      </div>
-    </div>
-    <div class="chart-container">
-      <canvas id="visitChart"></canvas>
-    </div>
-  </div>
-  <script>
-    const ctx = document.getElementById('visitChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: [${days.map(d => `'${d.slice(5)}'`).join(',')}],
-        datasets: [{
-          label: '每日访问量',
-          data: [${counts.join(',')}],
-          borderColor: '#2196F3',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)',
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  </script>
-</body>
-</html>`;
-  return new Response(html, {
-    headers: { 'Content-Type': 'text/html;charset=UTF-8' }
-  });
+function generateChartSvg(counterName, days, counts) {
+  const width = 900
+  const height = 600
+  const padding = { top: 120, right: 60, bottom: 100, left: 80 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+  const maxCount = Math.max(...counts, 1)
+  const totalVisits = counts.reduce((a, b) => a + b, 0)
+  const avgVisits = (totalVisits / counts.length).toFixed(1)
+  const medianVisits = [...counts].sort((a, b) => a - b)[Math.floor(counts.length / 2)]
+  // 生成路径点
+  const points = days.map((day, i) => {
+    const x = padding.left + (i / (days.length - 1)) * chartWidth
+    const y = padding.top + chartHeight - (counts[i] / maxCount) * chartHeight
+    return `${x},${y}`
+  }).join(' ')
+  // 生成填充区域路径
+  const areaPath = `M${padding.left},${padding.top + chartHeight} L${points} L${padding.left + chartWidth},${padding.top + chartHeight} Z`
+  // X轴标签（每3天显示一个）
+  const xLabels = days.map((day, i) => {
+    if (i % 3 === 0 || i === days.length - 1) {
+      const x = padding.left + (i / (days.length - 1)) * chartWidth
+      const label = day.slice(5) // MM-DD格式
+      return `<text x="${x}" y="${padding.top + chartHeight + 20}" text-anchor="middle" font-size="11" fill="#555" font-family="Arial, sans-serif">${label}</text>`
+    }
+    return ''
+  }).join('')
+  // 生成Y轴标签
+  const ySteps = 8
+  const yLabels = Array.from({ length: ySteps + 1 }, (_, i) => {
+    const value = Math.round((maxCount / ySteps) * i)
+    const y = padding.top + chartHeight - (i / ySteps) * chartHeight
+    return `<text x="${padding.left - 15}" y="${y + 4}" text-anchor="end" font-size="11" fill="#555" font-family="Arial, sans-serif">${value}</text>`
+  }).join('')
+  const yGridLines = Array.from({ length: ySteps + 1 }, (_, i) => {
+    const y = padding.top + chartHeight - (i / ySteps) * chartHeight
+    return `<line x1="${padding.left}" y1="${y}" x2="${padding.left + chartWidth}" y2="${y}" stroke="#f5f5f5" stroke-width="1"/>`
+  }).join('')
+  const xGridLines = days.map((day, i) => {
+    if (i % 3 === 0) {
+      const x = padding.left + (i / (days.length - 1)) * chartWidth
+      return `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${padding.top + chartHeight}" stroke="#f5f5f5" stroke-width="1"/>`
+    }
+    return ''
+  }).join('')
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="background: white; font-family: 'Times New Roman', serif;">
+  <defs>
+    <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1565C0;stop-opacity:0.25"/>
+      <stop offset="100%" style="stop-color:#1565C0;stop-opacity:0.03"/>
+    </linearGradient>
+  </defs>
+  <!-- 标题区域 -->
+  <text x="${width / 2}" y="35" text-anchor="middle" font-size="22" font-weight="600" fill="#1a1a1a" font-family="Arial, sans-serif">
+    ${counterName} Usage Analysis
+  </text>
+  <text x="${width / 2}" y="55" text-anchor="middle" font-size="14" fill="#666" font-family="Arial, sans-serif">
+    30-Day Temporal Distribution Pattern
+  </text>
+  <!-- 统计指标区域 -->
+  <text x="80" y="88" font-size="13" font-weight="500" fill="#2c3e50" font-family="Arial, sans-serif">Statistical Summary:</text>
+  <text x="220" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Total: ${totalVisits}</text>
+  <text x="320" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Mean: ${avgVisits}</text>
+  <text x="420" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Median: ${medianVisits}</text>
+  <text x="520" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Peak: ${Math.max(...counts)}</text>
+  <text x="620" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Range: ${Math.max(...counts) - Math.min(...counts)}</text>
+  <!-- 网格线 -->
+  ${yGridLines}
+  ${xGridLines}
+  <!-- 坐标轴 -->
+  <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + chartHeight}" 
+        stroke="#333" stroke-width="2"/>
+  <line x1="${padding.left}" y1="${padding.top + chartHeight}" x2="${padding.left + chartWidth}" y2="${padding.top + chartHeight}" 
+        stroke="#333" stroke-width="2"/>
+  <!-- 填充区域 -->
+  <path d="${areaPath}" fill="url(#areaGradient)"/>
+  <!-- 主折线 -->
+  <polyline points="${points}" fill="none" stroke="#1565C0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- 数据点 -->
+  ${days.map((day, i) => {
+    const x = padding.left + (i / (days.length - 1)) * chartWidth
+    const y = padding.top + chartHeight - (counts[i] / maxCount) * chartHeight
+    return `<circle cx="${x}" cy="${y}" r="3.5" fill="#1565C0" stroke="white" stroke-width="2">
+      <title>${day}: ${counts[i]} occurrences</title>
+    </circle>`
+  }).join('')}
+  <!-- Y轴标签 -->
+  ${yLabels}
+  <!-- X轴标签 -->
+  ${xLabels}
+  <!-- 坐标轴标题 -->
+  <text x="${padding.left + chartWidth / 2}" y="${padding.top + chartHeight + 45}" text-anchor="middle" font-size="13" 
+        font-weight="500" fill="#2c3e50" font-family="Arial, sans-serif">Date (MM-DD)</text>
+  <text x="25" y="${padding.top + chartHeight / 2}" text-anchor="middle" font-size="13" 
+        font-weight="500" fill="#2c3e50" font-family="Arial, sans-serif" 
+        transform="rotate(-90 25 ${padding.top + chartHeight / 2})">Frequency</text>
+</svg>`
 }
 function generateSvg({ title, titleBg, countBg, edgeFlat, dailyCount, totalCount }) {
   const borderRadius = edgeFlat ? '0' : '3'
@@ -645,20 +679,24 @@ function serveBadgeGeneratorPage() {
         <code id="embedCode"></code>
         <button class="copy-btn" onclick="copyCode('embedCode')">COPY</button>
       </div>
-      <h3 class="section-title">图表页面嵌入代码</h3>
+      <h3 class="section-title">统计图表</h3>
       <div class="code-group">
-        <p>HTML嵌入代码（可用于Markdown）：</p>
-        <code id="chartHtmlCode"></code>
-        <button class="copy-btn" onclick="copyCode('chartHtmlCode')">COPY</button>
+        <p>Markdown图片代码：</p>
+        <code id="chartMarkdownCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartMarkdownCode')">COPY</button>
         <div class="badge-preview">
-          <iframe id="chartPreview" width="100%" height="300" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px; display: none;"></iframe>
-          <a id="chartLink" href="#" target="_blank" style="color: #2196F3; text-decoration: none; display: block; margin-top: 10px;">在新窗口打开图表</a>
+          <img id="chartImagePreview" src="" alt="统计图表" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; display: none;">
         </div>
       </div>
       <div class="code-group">
-        <p>直接链接：</p>
-        <code id="chartUrlCode"></code>
-        <button class="copy-btn" onclick="copyCode('chartUrlCode')">COPY</button>
+        <p>HTML图片代码：</p>
+        <code id="chartHtmlCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartHtmlCode')">COPY</button>
+      </div>
+      <div class="code-group">
+        <p>SVG图片直接链接：</p>
+        <code id="chartSvgUrlCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartSvgUrlCode')">COPY</button>
       </div>
       <div class="options-description">
         <p>参数说明：</p>
@@ -702,10 +740,16 @@ function serveBadgeGeneratorPage() {
       if (savedData.counter && savedData.createdUrl) {
         const domain = window.location.host;
         const chartUrl = \`https://\${domain}/chart/\${savedData.counter}\`;
-        document.getElementById('chartPreview').src = chartUrl;
-        document.getElementById('chartPreview').style.display = 'block';
-        document.getElementById('chartLink').href = chartUrl;
-        document.getElementById('chartCode').textContent = chartUrl;
+        const chartSvgUrl = \`https://\${domain}/chart/\${savedData.counter}.svg\`;
+        const chartImagePreview = document.getElementById('chartImagePreview');
+        if (chartImagePreview) {
+          chartImagePreview.src = chartSvgUrl;
+          chartImagePreview.style.display = 'block';
+        }
+        const chartLink = document.getElementById('chartLink');
+        if (chartLink) {
+          chartLink.href = chartUrl;
+        }
       }
     });
     function saveFormData() {
@@ -745,15 +789,6 @@ function serveBadgeGeneratorPage() {
       document.getElementById('countBg').value = e.target.value;
       updatePreview();
     });
-    document.getElementById('chartPreview').addEventListener('load', function() {
-      this.style.opacity = '1';
-    });
-    function showChartPreview(url) {
-      const iframe = document.getElementById('chartPreview');
-      iframe.style.opacity = '0.5';
-      iframe.src = url;
-      iframe.style.display = 'block';
-    }
     async function createCounter() {
       const counter = document.getElementById('counter').value;
       const authCode = document.getElementById('authCode').value;
@@ -791,13 +826,16 @@ function serveBadgeGeneratorPage() {
         document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
         document.getElementById('embedCode').textContent = url;
         const chartUrl = \`https://\${domain}/chart/\${counter}\`;
-        const htmlEmbedCode = \`<iframe src="\${chartUrl}" width="800" height="400" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>\`;
-        document.getElementById('chartHtmlCode').textContent = htmlEmbedCode;
-        document.getElementById('chartUrlCode').textContent = chartUrl;
+        const chartSvgUrl = \`https://\${domain}/chart/\${counter}.svg\`;
+        const markdownCode = \`![\${counter} 统计图表](\${chartSvgUrl})\`;
+        const htmlImgCode = \`<img src="\${chartSvgUrl}" alt="\${counter} 统计图表" style="max-width: 100%; height: auto;">\`;
+        document.getElementById('chartMarkdownCode').textContent = markdownCode;
+        document.getElementById('chartHtmlCode').textContent = htmlImgCode;
+        document.getElementById('chartSvgUrlCode').textContent = chartSvgUrl;
         document.getElementById('chartLink').href = chartUrl;
-        const chartPreview = document.getElementById('chartPreview');
-        chartPreview.src = chartUrl;
-        chartPreview.style.display = 'block';
+        const chartImagePreview = document.getElementById('chartImagePreview');
+        chartImagePreview.src = chartSvgUrl;
+        chartImagePreview.style.display = 'block';
         showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
