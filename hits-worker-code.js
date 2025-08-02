@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = 'hits.xxxxxxx.net' // 设置你的域名
-const AUTH_CODE = 'xxxxxxxx' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.xxxxxxxx.net' // 设置你的域名
+const AUTH_CODE = 'xxxxx' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
@@ -645,13 +645,20 @@ function serveBadgeGeneratorPage() {
         <code id="embedCode"></code>
         <button class="copy-btn" onclick="copyCode('embedCode')">COPY</button>
       </div>
-      <h3 class="section-title">图表页面链接</h3>
+      <h3 class="section-title">图表页面嵌入代码</h3>
       <div class="code-group">
-        <code id="chartCode"></code>
-        <button class="copy-btn" onclick="copyCode('chartCode')">COPY</button>
+        <p>HTML嵌入代码（可用于Markdown）：</p>
+        <code id="chartHtmlCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartHtmlCode')">COPY</button>
         <div class="badge-preview">
-          <a id="chartLink" href="#" target="_blank" style="color: #2196F3; text-decoration: none;">查看图表</a>
+          <iframe id="chartPreview" width="100%" height="300" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px; display: none;"></iframe>
+          <a id="chartLink" href="#" target="_blank" style="color: #2196F3; text-decoration: none; display: block; margin-top: 10px;">在新窗口打开图表</a>
         </div>
+      </div>
+      <div class="code-group">
+        <p>直接链接：</p>
+        <code id="chartUrlCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartUrlCode')">COPY</button>
       </div>
       <div class="options-description">
         <p>参数说明：</p>
@@ -692,6 +699,14 @@ function serveBadgeGeneratorPage() {
       } else {
         document.getElementById('previewBadge').style.display = 'block';
       }
+      if (savedData.counter && savedData.createdUrl) {
+        const domain = window.location.host;
+        const chartUrl = \`https://\${domain}/chart/\${savedData.counter}\`;
+        document.getElementById('chartPreview').src = chartUrl;
+        document.getElementById('chartPreview').style.display = 'block';
+        document.getElementById('chartLink').href = chartUrl;
+        document.getElementById('chartCode').textContent = chartUrl;
+      }
     });
     function saveFormData() {
       const data = {
@@ -730,6 +745,15 @@ function serveBadgeGeneratorPage() {
       document.getElementById('countBg').value = e.target.value;
       updatePreview();
     });
+    document.getElementById('chartPreview').addEventListener('load', function() {
+      this.style.opacity = '1';
+    });
+    function showChartPreview(url) {
+      const iframe = document.getElementById('chartPreview');
+      iframe.style.opacity = '0.5';
+      iframe.src = url;
+      iframe.style.display = 'block';
+    }
     async function createCounter() {
       const counter = document.getElementById('counter').value;
       const authCode = document.getElementById('authCode').value;
@@ -767,8 +791,13 @@ function serveBadgeGeneratorPage() {
         document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
         document.getElementById('embedCode').textContent = url;
         const chartUrl = \`https://\${domain}/chart/\${counter}\`;
-        document.getElementById('chartCode').textContent = chartUrl;
+        const htmlEmbedCode = \`<iframe src="\${chartUrl}" width="800" height="400" frameborder="0" style="border: 1px solid #ddd; border-radius: 4px;"></iframe>\`;
+        document.getElementById('chartHtmlCode').textContent = htmlEmbedCode;
+        document.getElementById('chartUrlCode').textContent = chartUrl;
         document.getElementById('chartLink').href = chartUrl;
+        const chartPreview = document.getElementById('chartPreview');
+        chartPreview.src = chartUrl;
+        chartPreview.style.display = 'block';
         showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
