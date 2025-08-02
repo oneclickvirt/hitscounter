@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = 'hits.xxx.net' // 设置你的域名
-const AUTH_CODE = 'xxxxxxx' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.xxxxxxx.net' // 设置你的域名
+const AUTH_CODE = 'xxxxxxxx' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
@@ -29,6 +29,29 @@ async function handleRequest(request, db) {
       }
     })
   }
+  // 处理图表页面请求
+  if (url.pathname.startsWith('/chart/')) {
+    const counterName = url.pathname.split('/')[2]
+    if (!counterName) {
+      return new Response('Not Found', { status: 404 })
+    }
+    const exists = await checkCounterExists(db, counterName)
+    if (!exists) {
+      return new Response('Counter not found', { status: 404 })
+    }
+    const days = []
+    const counts = []
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date()
+      date.setDate(date.getDate() - i)
+      const dayStr = date.toISOString().split('T')[0]
+      const dailyKey = `${counterName}:daily:${dayStr}`
+      const count = await getCounter(db, dailyKey)
+      days.push(dayStr)
+      counts.push(count)
+    }
+    return serveChartPage(counterName, days, counts)
+  }
   // 处理API请求
   if (url.pathname === '/api/create') {
     if (request.method !== 'POST') {
@@ -48,7 +71,6 @@ async function handleRequest(request, db) {
           headers: { 'Content-Type': 'application/json' }
         })
       }
-      // 检查计数器是否已存在
       const exists = await checkCounterExists(db, counter)
       if (exists) {
         return new Response(JSON.stringify({
@@ -60,7 +82,6 @@ async function handleRequest(request, db) {
           headers: { 'Content-Type': 'application/json' }
         })
       }
-      // 创建新计数器
       await createCounter(db, counter)
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' }
@@ -223,6 +244,77 @@ async function cleanupOldDailyData(db, counterName) {
   await db.prepare(
     'DELETE FROM counters WHERE name LIKE ? AND name < ?'
   ).bind(`${counterName}:daily:%`, `${counterName}:daily:${cutoffDate}`).run();
+}
+function serveChartPage(counterName, days, counts) {
+  const chartData = days.map((day, index) => `{date: '${day}', count: ${counts[index]}}`).join(',');
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${counterName} - 使用统计图表</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+    h1 { text-align: center; color: #333; }
+    .chart-container { position: relative; height: 400px; margin: 30px 0; }
+    .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: bold; color: #2196F3; }
+    .stat-label { color: #666; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${counterName} 访问统计</h1>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">${counts.reduce((a, b) => a + b, 0)}</div>
+        <div class="stat-label">30天总访问</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${Math.max(...counts)}</div>
+        <div class="stat-label">单日最高</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${Math.round(counts.reduce((a, b) => a + b, 0) / counts.length)}</div>
+        <div class="stat-label">日平均访问</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="visitChart"></canvas>
+    </div>
+  </div>
+  <script>
+    const ctx = document.getElementById('visitChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [${days.map(d => `'${d.slice(5)}'`).join(',')}],
+        datasets: [{
+          label: '每日访问量',
+          data: [${counts.join(',')}],
+          borderColor: '#2196F3',
+          backgroundColor: 'rgba(33, 150, 243, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
+</body>
+</html>`;
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html;charset=UTF-8' }
+  });
 }
 function generateSvg({ title, titleBg, countBg, edgeFlat, dailyCount, totalCount }) {
   const borderRadius = edgeFlat ? '0' : '3'
@@ -553,6 +645,14 @@ function serveBadgeGeneratorPage() {
         <code id="embedCode"></code>
         <button class="copy-btn" onclick="copyCode('embedCode')">COPY</button>
       </div>
+      <h3 class="section-title">图表页面链接</h3>
+      <div class="code-group">
+        <code id="chartCode"></code>
+        <button class="copy-btn" onclick="copyCode('chartCode')">COPY</button>
+        <div class="badge-preview">
+          <a id="chartLink" href="#" target="_blank" style="color: #2196F3; text-decoration: none;">查看图表</a>
+        </div>
+      </div>
       <div class="options-description">
         <p>参数说明：</p>
         <ul>
@@ -660,13 +760,15 @@ function serveBadgeGeneratorPage() {
         const edgeFlat = document.getElementById('edgeStyle').value;
         const url = \`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`;
         const encodedUrl = encodeURIComponent(\`https://\${domain}/\${counter}.svg?action=hit&title=\${encodeURIComponent(title)}&title_bg=\${titleBg}&count_bg=\${countBg}&edge_flat=\${edgeFlat}\`);
-        // 保存创建的URL
         const savedData = JSON.parse(localStorage.getItem('hitsCounterData') || '{}');
         savedData.createdUrl = url;
         localStorage.setItem('hitsCounterData', JSON.stringify(savedData));
         document.getElementById('markdownCode').textContent = \`[![\${title}](\${url})](https://\${domain})\`;
         document.getElementById('htmlCode').textContent = \`<a href="https://\${domain}"><img src="\${url}" alt="\${title}"></a>\`;
         document.getElementById('embedCode').textContent = url;
+        const chartUrl = \`https://\${domain}/chart/\${counter}\`;
+        document.getElementById('chartCode').textContent = chartUrl;
+        document.getElementById('chartLink').href = chartUrl;
         showCreatedBadge(url);
         if (data.exists) {
           warningDiv.textContent = data.warning;
