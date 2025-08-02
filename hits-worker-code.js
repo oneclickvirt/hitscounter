@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = '' // 设置你的域名
-const AUTH_CODE = '' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.xxx.net' // 设置你的域名
+const AUTH_CODE = 'xxxxxxx' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
@@ -152,6 +152,7 @@ async function handleRequest(request, db) {
     daily++
     await updateCounter(db, totalKey, total)
     await updateCounter(db, dailyKey, daily)
+    await cleanupOldDailyData(db, counterName)
   }
   if (isSvg) {
     const countBg = url.searchParams.get('count_bg') || '#79C83D'
@@ -214,6 +215,14 @@ async function updateCounter(db, key, value) {
     ON CONFLICT(name) 
     DO UPDATE SET count = excluded.count
   `).bind(key, value).run()
+}
+async function cleanupOldDailyData(db, counterName) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const cutoffDate = thirtyDaysAgo.toISOString().split('T')[0];
+  await db.prepare(
+    'DELETE FROM counters WHERE name LIKE ? AND name < ?'
+  ).bind(`${counterName}:daily:%`, `${counterName}:daily:${cutoffDate}`).run();
 }
 function generateSvg({ title, titleBg, countBg, edgeFlat, dailyCount, totalCount }) {
   const borderRadius = edgeFlat ? '0' : '3'
