@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = 'hits.example.com' // 设置你的域名
-const AUTH_CODE = 'your_auth_code' // 设置你的验证码
+const ALLOWED_DOMAIN = '' // 设置你的域名
+const AUTH_CODE = '' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
