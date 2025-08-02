@@ -3,8 +3,8 @@ export default {
     return handleRequest(request, env.HITS)
   }
 }
-const ALLOWED_DOMAIN = 'hits.xxxx.net' // 设置你的域名
-const AUTH_CODE = 'xxxxxx' // 设置你的验证码
+const ALLOWED_DOMAIN = 'hits.xxxxx.net' // 设置你的域名
+const AUTH_CODE = 'xxxxxxx' // 设置你的验证码
 async function handleRequest(request, db) {
   const url = new URL(request.url)
   // 如果是主页请求，返回徽标生成页面
@@ -104,7 +104,6 @@ async function handleRequest(request, db) {
   if (url.pathname === '/api/monthly') {
     const counterName = url.searchParams.get('counter')
     if (counterName === 'example') {
-      // 生成示例数据
       const days = []
       const counts = []
       const today = new Date()
@@ -127,7 +126,6 @@ async function handleRequest(request, db) {
         headers: { 'Content-Type': 'application/json' }
       })
     }
-    // 验证计数器是否存在
     const exists = await checkCounterExists(db, counterName)
     if (!exists) {
       return new Response(JSON.stringify({ error: '计数器不存在' }), {
@@ -312,7 +310,6 @@ function generateChartSvg(counterName, days, counts) {
     30-Day Temporal Distribution Pattern
   </text>
   <!-- 统计指标区域 -->
-  <text x="80" y="88" font-size="13" font-weight="500" fill="#2c3e50" font-family="Arial, sans-serif">Statistical Summary:</text>
   <text x="220" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Total: ${totalVisits}</text>
   <text x="320" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Mean: ${avgVisits}</text>
   <text x="420" y="88" font-size="12" fill="#34495e" font-family="Arial, sans-serif">Median: ${medianVisits}</text>
@@ -656,7 +653,6 @@ function serveBadgeGeneratorPage() {
     </div>
     <button onclick="createCounter()">GENERATE BADGE</button>
     <div id="warning" class="warning"></div>
-    <!-- 使用方法部分 -->
     <div id="result" class="result">
       <h3 class="section-title">MARKDOWN</h3>
       <div class="code-group">
@@ -807,7 +803,7 @@ function serveBadgeGeneratorPage() {
         errorDiv.style.display = 'none';
         warningDiv.style.display = 'none';
         resultDiv.style.display = 'none';
-        if (!response.ok) {
+        if (!response.ok && !data.exists) {
           errorDiv.textContent = data.error || '创建失败';
           errorDiv.style.display = 'block';
           return;
@@ -832,7 +828,6 @@ function serveBadgeGeneratorPage() {
         document.getElementById('chartMarkdownCode').textContent = markdownCode;
         document.getElementById('chartHtmlCode').textContent = htmlImgCode;
         document.getElementById('chartSvgUrlCode').textContent = chartSvgUrl;
-        document.getElementById('chartLink').href = chartUrl;
         const chartImagePreview = document.getElementById('chartImagePreview');
         chartImagePreview.src = chartSvgUrl;
         chartImagePreview.style.display = 'block';
@@ -843,7 +838,8 @@ function serveBadgeGeneratorPage() {
         }
         resultDiv.style.display = 'block';
       } catch (e) {
-        errorDiv.textContent = '请求失败';
+        console.error('详细错误:', e);
+        errorDiv.textContent = '请求失败: ' + e.message;
         errorDiv.style.display = 'block';
         resultDiv.style.display = 'none';
         warningDiv.style.display = 'none';
