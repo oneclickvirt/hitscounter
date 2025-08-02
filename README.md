@@ -71,6 +71,12 @@ https://blog.cloudflare.com/zh-cn/making-full-stack-easier-d1-ga-hyperdrive-queu
 
 </details>
 
+## 示例
+
+[![hits](https://hits.spiritlhl.net/goecs.svg?action=hit&title=hits&title_bg=%23555555&count_bg=%233aebee&edge_flat=false)](https://hits.spiritlhl.net)
+
+![goecs 统计图表](https://hits.spiritlhl.net/chart/goecs.svg)
+
 ## Thanks
 
 感谢 hits.seeyoufarm.com 曾经提供的计数服务，https://github.com/gjbae1212/hit-counter 已被归档，本项目受此启发诞生。
