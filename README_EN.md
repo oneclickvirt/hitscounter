@@ -11,7 +11,7 @@ A lightweight visit counter based on **Cloudflare Workers** and **D1 Database**.
 
    ```sql
    CREATE TABLE counters ( name TEXT PRIMARY KEY, count INTEGER DEFAULT 0 );
-````
+   ```
 
 2. **Create a Worker**
    Navigate to **Workers & Pages** → **Create application** → **Create Worker** → choose **"Hello World" Worker**.
@@ -71,4 +71,5 @@ Cloudflare provides generous free limits, which are sufficient for personal usag
 ## Thanks
 
 Special thanks to [hits.seeyoufarm.com](https://hits.seeyoufarm.com), which provided a similar service in the past.
+
 The original project [gjbae1212/hit-counter](https://github.com/gjbae1212/hit-counter) has been archived, and this project was inspired by it.
