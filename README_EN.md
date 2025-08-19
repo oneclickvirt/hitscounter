@@ -30,9 +30,11 @@ A lightweight visit counter based on **Cloudflare Workers** and **D1 Database**.
      * Database: `hits`
    * In **Domains & Routes** → **Add** → **Custom domain**, bind your counter domain.
 
-Once deployed, visit your configured domain to access the counter generator page and follow the instructions to create and use counters.
+After the deployment is complete, visit your configured domain to see the counter generator page, follow the page prompts to create and use counters.
 
-**⚠️ Important: Do not share your authentication code. Without it, no one can create new counter SVGs.**
+Only 30 days of daily access records are retained, only the total number of records exceeding 30 days are counted, so as to avoid the unlimited increase of the database over time to exhaust the free credits.
+
+**Please be careful not to disclose the authentication code you set when deploying, no authentication code can not create a new counter SVG, to avoid others to create an increase in free credits consumption**.
 
 ## Free Plan Quota
 
