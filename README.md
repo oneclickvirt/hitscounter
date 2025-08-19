@@ -4,6 +4,10 @@
 
 一个基于 Cloudflare Workers 和 D1 数据库的轻量级访问计数器。
 
+## 语言
+
+[中文文档](README.md) | [English Docs](README_EN.md)
+
 ## 部署步骤
 
 1. 创建D1数据库
