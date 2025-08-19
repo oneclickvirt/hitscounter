@@ -81,6 +81,10 @@ https://blog.cloudflare.com/zh-cn/making-full-stack-easier-d1-ga-hyperdrive-queu
 
 ![goecs 统计图表](https://hits.spiritlhl.net/chart/goecs.svg)
 
+## 类似项目
+
+下载数统计：https://github.com/oneclickvirt/downloadcounter
+
 ## Thanks
 
 感谢 hits.seeyoufarm.com 曾经提供的计数服务，https://github.com/gjbae1212/hit-counter 已被归档，本项目受此启发诞生。
