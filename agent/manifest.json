@@ -1,0 +1,11 @@
+{
+  "repository": "oneclickvirt/hitscounter",
+  "skill_name": "oneclickvirt-hitscounter",
+  "mcp": true,
+  "files": {
+    "agent/profile.json": "3f5f513eed1f8dac85ca7cf4ef18fd5e6f6f427a620f7f65ceb55b33751ddba1",
+    "skills/oneclickvirt-hitscounter/SKILL.md": "2c98041d9f05413edf0ed591d7307dcdd00c6d2ca708e3f03a696d58b173cf60",
+    "skills/oneclickvirt-hitscounter/SKILL_ZH.md": "05964fb015acd5dd77abdb7f38b176803a2efcd05ecd76eb1eff72099d2ec4f4",
+    "agent/server.py": "d01416e6194095d90bf0d49ea29f7122969f0b74cf4d74ed0b1ce78753423a7d"
+  }
+}

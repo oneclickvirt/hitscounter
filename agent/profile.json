@@ -1,0 +1,22 @@
+{
+  "repository": "oneclickvirt/hitscounter",
+  "branch": "main",
+  "skill_name": "oneclickvirt-hitscounter",
+  "purpose": "Read and troubleshoot existing Cloudflare/D1 visit counters.",
+  "notes": [
+    "counter_monthly reads /api/monthly and never increments the counter. ONECLICKVIRT_COUNTER_URL may set the HTTPS base URL of an existing deployment.",
+    "Counter creation uses /api/create with the existing deployment's authCode; keep that secret out of source, prompts and documentation. MCP exposes monthly statistics only."
+  ],
+  "guide": "https://www.spiritlhl.net/guide/agent_integrations.html",
+  "releases": false,
+  "mcp": true,
+  "counter": true,
+  "source_files": [
+    "API.md"
+  ],
+  "purpose_zh": "读取并排查已有 Cloudflare/D1 访问计数器。",
+  "notes_zh": [
+    "counter_monthly 只读取 /api/monthly，不增加访问计数。可用 ONECLICKVIRT_COUNTER_URL 指定已有部署的 HTTPS 地址。",
+    "新建计数器的 /api/create 使用部署现有 authCode，该凭据不得写入源码、提示词或文档。MCP 仅提供月统计查询。"
+  ]
+}
